@@ -19,7 +19,7 @@
 #define DLPACK_MAJOR_VERSION 1
 
 /*! \brief The current minor version of dlpack */
-#define DLPACK_MINOR_VERSION 1
+#define DLPACK_MINOR_VERSION 0
 
 /*! \brief DLPACK_DLL prefix for windows */
 #ifdef _WIN32
@@ -78,7 +78,7 @@ typedef enum {
   /*! \brief CUDA GPU device */
   kDLCUDA = 2,
   /*!
-   * \brief Pinned CUDA CPU memory by cudaMallocHost
+   * \brief Pinned CUDA CPU memory by hipHostMalloc
    */
   kDLCUDAHost = 3,
   /*! \brief OpenCL devices. */
@@ -102,7 +102,7 @@ typedef enum {
    */
   kDLExtDev = 12,
   /*!
-   * \brief CUDA managed/unified memory allocated by cudaMallocManaged
+   * \brief CUDA managed/unified memory allocated by hipMallocManaged
    */
   kDLCUDAManaged = 13,
   /*!
@@ -157,26 +157,6 @@ typedef enum {
   kDLComplex = 5U,
   /*! \brief boolean */
   kDLBool = 6U,
-  /*! \brief FP8 data types */
-  kDLFloat8_e3m4 = 7U,
-  kDLFloat8_e4m3 = 8U,
-  kDLFloat8_e4m3b11fnuz = 9U,
-  kDLFloat8_e4m3fn = 10U,
-  kDLFloat8_e4m3fnuz = 11U,
-  kDLFloat8_e5m2 = 12U,
-  kDLFloat8_e5m2fnuz = 13U,
-  kDLFloat8_e8m0fnu = 14U,
-  /*! \brief FP6 data types
-   * Setting bits != 6 is currently unspecified, and the producer must ensure it is set
-   * while the consumer must stop importing if the value is unexpected.
-   */
-  kDLFloat6_e2m3fn = 15U,
-  kDLFloat6_e3m2fn = 16U,
-  /*! \brief FP4 data types
-   * Setting bits != 4 is currently unspecified, and the producer must ensure it is set
-   * while the consumer must stop importing if the value is unexpected.
-   */
-  kDLFloat4_e2m1fn = 17U,
 } DLDataTypeCode;
 
 /*!
@@ -190,12 +170,6 @@ typedef enum {
  *   - int8: type_code = 0, bits = 8, lanes = 1
  *   - std::complex<float>: type_code = 5, bits = 64, lanes = 1
  *   - bool: type_code = 6, bits = 8, lanes = 1 (as per common array library convention, the underlying storage size of bool is 8 bits)
- *   - float8_e4m3: type_code = 8, bits = 8, lanes = 1 (packed in memory)
- *   - float6_e3m2fn: type_code = 16, bits = 6, lanes = 1 (packed in memory)
- *   - float4_e2m1fn: type_code = 17, bits = 4, lanes = 1 (packed in memory)
- *
- *  When a sub-byte type is packed, DLPack requires the data to be in little bit-endian, i.e.,
- *  for a packed data set D ((D >> (i * bits)) && bit_mask) stores the i-th element.
  */
 typedef struct {
   /*!
@@ -305,14 +279,6 @@ typedef struct DLManagedTensor {
  * consumer, until the producer-provided deleter is invoked.
  */
 #define DLPACK_FLAG_BITMASK_IS_COPIED (1UL << 1UL)
-
-/*!
- * \brief bit mask to indicate that whether a sub-byte type is packed or padded.
- *
- * The default for sub-byte types (ex: fp4/fp6) is assumed packed. This flag can
- * be set by the producer to signal that a tensor of sub-byte type is padded.
- */
-#define DLPACK_FLAG_BITMASK_IS_SUBBYTE_TYPE_PADDED (1UL << 2UL)
 
 /*!
  * \brief A versioned and managed C Tensor object, manage memory of DLTensor.
